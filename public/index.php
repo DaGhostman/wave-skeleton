@@ -3,40 +3,80 @@
 require '../vendor/autoload.php';
 
 $app = new \Wave\Framework\Application\Core('Wave Skeleton Application');
+$ioc = new \Wave\Framework\Application\IoC();
 
-$app->controller('/', 'GET', function(){
-    echo "Hello World!";
-    echo "See your horoscope, chose your sign:<br />";
-    echo '<ul>';
-    echo '
-    <li><a href="/sign/aquarius">Aquarius</a></li>
-    <li><a href="/sign/pieces">Pieces</a></li>
-    <li><a href="/sign/aries">Aries</a></li>
-    <li><a href="/sign/taurus">Taurus</a></li>
-    <li><a href="/sign/gemini">Gemini</a></li>
-    <li><a href="/sign/cancer">Cancer</a></li>
-    <li><a href="/sign/leo">Leo</a></li>
-    <li><a href="/sign/virgo">Virgo</a></li>
-    <li><a href="/sign/libra">Libra</a></li>
-    <li><a href="/sign/Scorpio">Scorpio</a></li>
-    <li><a href="/sign/sagittarius">Sagittarius</a></li>
-    <li><a href="/sign/capricorn">capricorn</a></li>
-    ';
-    echo '</ul>';
+/**
+ * Register Twig
+ */
+$ioc->register('view-twig', function() {
+    $loader = new Twig_Loader_Filesystem('../application/templates');
+    return new Twig_Environment($loader, array(
+        'cache' => '../application/templates/cache'
+    ));
 });
 
-$app->controller('/sign/:sign', 'GET', function($arguments) {
-    if (extension_loaded('curl')) {
-        $request = new \Wave\Framework\Http\Curl\Request();
-        $r = $request->setUrl(sprintf('http://widgets.fabulously40.com/horoscope.json?sign=%s', $arguments->sign))
-            ->setMethod('GET')
-            ->setUA('WaveFramework/2.0 Http\Curl\Request Client')
-            ->send();
 
-        if (!is_null($r)) {
-            $data = json_decode($r->getData(), true);
-            echo sprintf("Sign: %s <br />", ucfirst($data['horoscope']['sign']));
-            echo sprintf("Horoscope: %s", htmlentities($data['horoscope']['horoscope']));
+/**
+ * Register Smarty
+ */
+$ioc->register('view-smarty', function() {
+    $smarty = new Smarty();
+    $smarty->setTemplateDir('../application/templates');
+    $smarty->setCompileDir('../application/templates/cache');
+
+    return $smarty;
+});
+
+/**
+ * Register Plates
+ */
+$ioc->register('view-plates', function() {
+    $plates = new \League\Plates\Engine('../application/templates');
+    $plates->setFileExtension('phtml');
+    return new \League\Plates\Template($plates);
+});
+
+$app->controller('/', 'GET', function () use ($ioc) {
+    $view = $view = $ioc->get('view-twig');
+
+    echo $view->render(
+        'index.twig',
+        explode('|', 'aquarius|pisces|aries|taurus|gemini|cancer|leo|virgo|libra|scorpio|sagittarius|capricorn')
+    );
+});
+
+/**
+ * This controller makes requests to the horoscope API and renders
+ * the templates with the results.
+ *
+ * The switch in this controller is only for preview, in normal circumstances
+ * you do not need more than one templating engine at a time.
+ */
+$app->controller('/:engine/sign/:sign', 'GET', function($arguments) use ($ioc) {
+    if (extension_loaded('curl')) {
+        $view = $ioc->get(sprintf('view-%s', $arguments->engine));
+
+
+        $model = new \Model\HoroscopeAPIModel($arguments->sign);
+
+        if (($data = $model->fetch()) !== null) {
+            switch($arguments->engine) {
+                case 'twig':
+                    //$view->loadTemplate('horoscope.twig');
+                    echo $view->render('horoscope.twig', $data['horoscope']);
+                    break;
+                case 'smarty':
+                    $view->assign('sign', $data['horoscope']['sign']);
+                    $view->assign('horoscope', $data['horoscope']['horoscope']);
+                    $view->display('horoscope.tpl');
+                    break;
+                case 'plates':
+                    $view->sign = $data['horoscope']['sign'];
+                    $view->horoscope = $data['horoscope']['horoscope'];
+
+                    echo $view->render('horoscope');
+                    break;
+            }
         }
     } else {
         echo "Sorry, you don't have curl installed. Please install it and try again!";
@@ -46,7 +86,8 @@ $app->controller('/sign/:sign', 'GET', function($arguments) {
     $response->cache(true, 3600);
     $response->send();
 }, array(
-    'sign' => 'aquarius|pisces|aries|taurus|gemini|cancer|leo|virgo|libra|scorpio|sagittarius|capricorn'
+    'sign' => 'aquarius|pisces|aries|taurus|gemini|cancer|leo|virgo|libra|scorpio|sagittarius|capricorn',
+    'engine' => 'twig|smarty|plates'
 ));
 
 $app->run(new \Wave\Framework\Http\Request($_SERVER));

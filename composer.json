@@ -10,6 +10,14 @@
         }
     ],
     "require": {
-        "wave/wave" : ">=2.0"
+        "wave/wave" : ">=2.0",
+        "smarty/smarty": "v3.1.19",
+        "twig/twig": "v1.16.0",
+        "league/plates": "2.1.0"
+    },
+    "autoload": {
+        "psr-0": {
+            "Model\\": "application/models/"
+        }
     }
 }

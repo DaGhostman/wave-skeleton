@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Home</title>
+</head>
+<body>
+    View your horoscope with:
+    <ul>
+        {% for sign in signs %}
+            <li> {{ sign }} -
+                <a href="/smarty/sign/{{ sign }}">Smarty</a> |
+                <a href="/twig/sign/{{ sign }}">Twig</a> |
+                <a href="/plates/sign/{{ sign }}">Plates</a>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
