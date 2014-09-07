@@ -1,0 +1,15 @@
+{
+    "name": "Wave/Wave-Skeleton",
+    "description": "Skeleton application for Wave framework",
+    "minimum-stability": "stable",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "Dimitar Dimitrov",
+            "email": "daghostman.dd@gmail.com"
+        }
+    ],
+    "require": {
+        "wave/wave" : ">=2.0"
+    }
+}
