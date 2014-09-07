@@ -41,8 +41,21 @@ $app->controller('/', 'GET', function () use ($ioc) {
 
     echo $view->render(
         'index.twig',
-        explode('|', 'aquarius|pisces|aries|taurus|gemini|cancer|leo|virgo|libra|scorpio|sagittarius|capricorn')
-    );
+        array('signs' => array(
+            'Aquarius',
+            'Pisces',
+            'Aries',
+            'Taurus',
+            'Gemini',
+            'Cancer',
+            'Leo',
+            'Virgo',
+            'Libra',
+            'Scorpio',
+            'Sagittarius',
+            'Capricorn'
+        )
+        ));
 });
 
 /**
@@ -50,7 +63,7 @@ $app->controller('/', 'GET', function () use ($ioc) {
  * the templates with the results.
  *
  * The switch in this controller is only for preview, in normal circumstances
- * you do not need more than one templating engine at a time.
+ * you do not need more than one template engine at a time.
  */
 $app->controller('/:engine/sign/:sign', 'GET', function($arguments) use ($ioc) {
     if (extension_loaded('curl')) {
@@ -67,12 +80,12 @@ $app->controller('/:engine/sign/:sign', 'GET', function($arguments) use ($ioc) {
                     break;
                 case 'smarty':
                     $view->assign('sign', $data['horoscope']['sign']);
-                    $view->assign('horoscope', $data['horoscope']['horoscope']);
+                    $view->assign('horoscope', htmlentities($data['horoscope']['horoscope']));
                     $view->display('horoscope.tpl');
                     break;
                 case 'plates':
                     $view->sign = $data['horoscope']['sign'];
-                    $view->horoscope = $data['horoscope']['horoscope'];
+                    $view->horoscope = htmlentities($data['horoscope']['horoscope']);
 
                     echo $view->render('horoscope');
                     break;
@@ -86,7 +99,7 @@ $app->controller('/:engine/sign/:sign', 'GET', function($arguments) use ($ioc) {
     $response->cache(true, 3600);
     $response->send();
 }, array(
-    'sign' => 'aquarius|pisces|aries|taurus|gemini|cancer|leo|virgo|libra|scorpio|sagittarius|capricorn',
+    'sign' => 'aquarius|pisces|aries|taurus|gemini|cancer|leo|virgo|libra|scorpio|sagittarius|capricorn', // All possible
     'engine' => 'twig|smarty|plates'
 ));
 
